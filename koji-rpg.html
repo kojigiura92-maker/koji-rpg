@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOJI RPG</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #f7c26a;
+    --accent3: #6af7b8;
+    --text: #e8e8f0;
+    --text-muted: #6b6b8a;
+    --inversor: #6af7b8;
+    --estratega: #7c6af7;
+    --lider: #f76a6a;
+    --constructor: #f7c26a;
+    --conocimiento: #6ab8f7;
+    --red: #f76ab8;
+    --presencia: #c8f76a;
+    --finanzas: #f7a06a;
+    --energia: #6af7f7;
+    --mentalidad: #b06af7;
+    --hobby: #f7f76a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; min-height: 100vh; padding: 20px; }
+
+  .header { text-align: center; padding: 30px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .header-label { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 4px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+  .header h1 { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+  .header h1 span { color: var(--accent); }
+
+  .sync-bar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); }
+  .sync-dot.syncing { background: var(--accent2); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--lider); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .avatar-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; }
+  .avatar-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .avatar-info .title { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }
+  .level-display { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+  .level-number { font-family: 'Space Mono', monospace; font-size: 48px; font-weight: 700; color: var(--accent2); line-height: 1; }
+  .level-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; }
+  .total-xp { font-family: 'Space Mono', monospace; font-size: 13px; color: var(--text-muted); }
+  .total-xp span { color: var(--accent2); }
+  .xp-bar-container { margin-top: 12px; }
+  .xp-bar-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-family: 'Space Mono', monospace; }
+  .xp-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.5s ease; }
+  .missions-completed { text-align: right; }
+  .missions-completed .big-number { font-family: 'Space Mono', monospace; font-size: 48px; font-weight: 700; color: var(--accent3); line-height: 1; }
+  .missions-completed .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; }
+
+  .section-title { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 14px; }
+
+  .skills-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .skill-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
+  .skill-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .skill-card.inversor::before { background: var(--inversor); }
+  .skill-card.estratega::before { background: var(--estratega); }
+  .skill-card.lider::before { background: var(--lider); }
+  .skill-card.constructor::before { background: var(--constructor); }
+  .skill-card.conocimiento::before { background: var(--conocimiento); }
+  .skill-card.red::before { background: var(--red); }
+  .skill-card.presencia::before { background: var(--presencia); }
+  .skill-card.finanzas::before { background: var(--finanzas); }
+  .skill-card.energia::before { background: var(--energia); }
+  .skill-card.mentalidad::before { background: var(--mentalidad); }
+  .skill-card.hobby::before { background: var(--hobby); }
+  .skill-name { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+  .skill-card.inversor .skill-name { color: var(--inversor); }
+  .skill-card.estratega .skill-name { color: var(--estratega); }
+  .skill-card.lider .skill-name { color: var(--lider); }
+  .skill-card.constructor .skill-name { color: var(--constructor); }
+  .skill-card.conocimiento .skill-name { color: var(--conocimiento); }
+  .skill-card.red .skill-name { color: var(--red); }
+  .skill-card.presencia .skill-name { color: var(--presencia); }
+  .skill-card.finanzas .skill-name { color: var(--finanzas); }
+  .skill-card.energia .skill-name { color: var(--energia); }
+  .skill-card.mentalidad .skill-name { color: var(--mentalidad); }
+  .skill-card.hobby .skill-name { color: var(--hobby); }
+  .skill-xp { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .skill-bar { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .skill-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
+  .skill-card.inversor .skill-bar-fill { background: var(--inversor); }
+  .skill-card.estratega .skill-bar-fill { background: var(--estratega); }
+  .skill-card.lider .skill-bar-fill { background: var(--lider); }
+  .skill-card.constructor .skill-bar-fill { background: var(--constructor); }
+  .skill-card.conocimiento .skill-bar-fill { background: var(--conocimiento); }
+  .skill-card.red .skill-bar-fill { background: var(--red); }
+  .skill-card.presencia .skill-bar-fill { background: var(--presencia); }
+  .skill-card.finanzas .skill-bar-fill { background: var(--finanzas); }
+  .skill-card.energia .skill-bar-fill { background: var(--energia); }
+  .skill-card.mentalidad .skill-bar-fill { background: var(--mentalidad); }
+  .skill-card.hobby .skill-bar-fill { background: var(--hobby); }
+  .skill-next { font-size: 10px; color: var(--text-muted); font-family: 'Space Mono', monospace; }
+
+  .rewards-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+  .skill-reward-group { margin-bottom: 24px; }
+  .skill-reward-group:last-child { margin-bottom: 0; }
+  .skill-reward-header { display: flex; align-items: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .skill-reward-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+  .skill-reward-xp { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); margin-left: auto; }
+  .reward-tiers { display: flex; flex-direction: column; gap: 8px; }
+  .reward-tier { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); }
+  .reward-tier.unlocked { border-color: var(--accent3); }
+  .reward-lock { font-size: 16px; flex-shrink: 0; }
+  .reward-tier-info { flex: 1; }
+  .reward-tier-name { font-size: 13px; font-weight: 600; }
+  .reward-tier-desc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .reward-tier-pts { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--accent2); flex-shrink: 0; }
+
+  .missions-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab { font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--text-muted); cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .tab.active { border-color: var(--accent); color: var(--accent); background: rgba(124,106,247,0.1); }
+
+  .wave-label { font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 3px; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; display: inline-block; margin-bottom: 12px; }
+  .wave-label.w1 { color: var(--accent); border: 1px solid var(--accent); background: rgba(124,106,247,0.08); }
+  .wave-label.w2 { color: var(--accent2); border: 1px solid var(--accent2); background: rgba(247,194,106,0.08); }
+  .wave-label.w2-locked { color: var(--text-muted); border: 1px solid var(--border); background: transparent; }
+
+  .mission-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; position: relative; }
+  .mission-card.completed { opacity: 0.4; }
+  .mission-card.locked-card { opacity: 0.3; pointer-events: none; }
+  .mission-card.completed::after { content: '✓ COMPLETADA'; position: absolute; top: 14px; right: 14px; font-family: 'Space Mono', monospace; font-size: 9px; color: var(--accent3); letter-spacing: 2px; }
+  .mission-card.locked-card::after { content: '🔒 BLOQUEADA'; position: absolute; top: 14px; right: 14px; font-family: 'Space Mono', monospace; font-size: 9px; color: var(--text-muted); letter-spacing: 2px; }
+  .mission-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .mission-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .mission-title { font-weight: 600; font-size: 14px; flex: 1; }
+  .mission-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 10px; padding-left: 28px; }
+  .mission-footer { display: flex; gap: 8px; padding-left: 28px; flex-wrap: wrap; }
+  .tag { font-family: 'Space Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .tag.skill-inversor { background: rgba(106,247,184,0.1); color: var(--inversor); }
+  .tag.skill-estratega { background: rgba(124,106,247,0.1); color: var(--estratega); }
+  .tag.skill-lider { background: rgba(247,106,106,0.1); color: var(--lider); }
+  .tag.skill-constructor { background: rgba(247,194,106,0.1); color: var(--constructor); }
+  .tag.skill-conocimiento { background: rgba(106,184,247,0.1); color: var(--conocimiento); }
+  .tag.skill-red { background: rgba(247,106,184,0.1); color: var(--red); }
+  .tag.skill-presencia { background: rgba(200,247,106,0.1); color: var(--presencia); }
+  .tag.skill-finanzas { background: rgba(247,160,106,0.1); color: var(--finanzas); }
+  .tag.skill-energia { background: rgba(106,247,247,0.1); color: var(--energia); }
+  .tag.skill-mentalidad { background: rgba(176,106,247,0.1); color: var(--mentalidad); }
+  .tag.skill-hobby { background: rgba(247,247,106,0.1); color: var(--hobby); }
+  .tag.pts { background: rgba(247,194,106,0.15); color: var(--accent2); }
+  .tag.tipo-accion { background: rgba(255,255,255,0.05); color: var(--text-muted); }
+  .complete-btn { margin-top: 12px; margin-left: 28px; background: none; border: 1px solid var(--accent); color: var(--accent); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: 2px; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .complete-btn:hover { background: var(--accent); color: white; }
+
+  .unlock-notice { background: rgba(247,194,106,0.08); border: 1px solid rgba(247,194,106,0.3); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; font-size: 12px; color: var(--accent2); font-family: 'Space Mono', monospace; display: none; }
+  .unlock-notice.show { display: block; }
+
+  .log-section { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+  .log-entry { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-date { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); flex-shrink: 0; padding-top: 2px; }
+  .log-text { flex: 1; }
+  .log-pts { font-family: 'Space Mono', monospace; color: var(--accent2); font-size: 12px; flex-shrink: 0; }
+  .empty-log { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px; font-family: 'Space Mono', monospace; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--accent); color: white; padding: 12px 24px; border-radius: 10px; font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 1px; transition: transform 0.3s ease; z-index: 100; text-align: center; max-width: 320px; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .loading-screen { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; gap: 16px; }
+  .loading-screen.hidden { display: none; }
+  .loading-text { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text-muted); letter-spacing: 3px; }
+  .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading-screen">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">CARGANDO PROGRESO...</div>
+</div>
+
+<div class="header">
+  <div class="header-label">Sistema de Desarrollo Personal</div>
+  <h1>KOJI <span>RPG</span></h1>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-label">Sincronizado</span>
+</div>
+
+<div class="avatar-section">
+  <div class="avatar-info">
+    <h2>Koji Giura</h2>
+    <div class="title" id="level-title">Emprendedor</div>
+    <div class="level-display">
+      <div class="level-number" id="level-display">1</div>
+      <div class="level-label">Nivel</div>
+    </div>
+    <div class="total-xp">XP Total: <span id="total-xp-display">0</span> pts</div>
+    <div class="xp-bar-container">
+      <div class="xp-bar-label">
+        <span>Nivel <span id="current-level-label">1</span></span>
+        <span><span id="xp-in-level">0</span> / <span id="xp-for-next">200</span> XP</span>
+      </div>
+      <div class="xp-bar"><div class="xp-bar-fill" id="level-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="missions-completed">
+    <div class="big-number" id="missions-count">0</div>
+    <div class="label">Misiones<br>completadas</div>
+  </div>
+</div>
+
+<div class="section-title">// Skills del Avatar</div>
+<div class="skills-grid" id="skills-grid"></div>
+
+<div class="rewards-section">
+  <div class="section-title">// Recompensas por Skill</div>
+  <div id="rewards-container"></div>
+</div>
+
+<div class="missions-section">
+  <div class="section-title">// Misiones</div>
+  <div class="tabs">
+    <button class="tab active" onclick="filterMissions(this,'todas')">Todas</button>
+    <button class="tab" onclick="filterMissions(this,'empresario')">💼 Empresario</button>
+    <button class="tab" onclick="filterMissions(this,'inversor')">💰 Inversor</button>
+    <button class="tab" onclick="filterMissions(this,'persona')">🧘 Persona</button>
+  </div>
+  <div class="unlock-notice" id="unlock-notice"></div>
+  <div id="missions-container"></div>
+</div>
+
+<div class="log-section">
+  <div class="section-title">// Registro de Actividad</div>
+  <div id="log-container"><div class="empty-log">— Sin actividad aún. —</div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'koji-rpg-state';
+
+const SKILLS_CONFIG = [
+  {id:'inversor',label:'💰 Inversor',cls:'inversor'},
+  {id:'estratega',label:'🧠 Estratega',cls:'estratega'},
+  {id:'lider',label:'🎙️ Líder',cls:'lider'},
+  {id:'constructor',label:'🏗️ Constructor',cls:'constructor'},
+  {id:'conocimiento',label:'📚 Conocimiento',cls:'conocimiento'},
+  {id:'red',label:'🌐 Red',cls:'red'},
+  {id:'presencia',label:'🎤 Presencia',cls:'presencia'},
+  {id:'finanzas',label:'💵 Finanzas Pers.',cls:'finanzas'},
+  {id:'energia',label:'⚡ Energía',cls:'energia'},
+  {id:'mentalidad',label:'🎯 Mentalidad',cls:'mentalidad'},
+  {id:'hobby',label:'🎨 Hobby',cls:'hobby'},
+];
+
+const SKILL_REWARDS = {
+  inversor:{label:'💰 Inversor',tiers:[
+    {xp:50,icon:'🏦',name:'Abre tu cuenta',desc:'Abre cuenta en Interactive Brokers o Renta4'},
+    {xp:150,icon:'📈',name:'Primera inversión',desc:'Invierte un monto pequeño real en bolsa'},
+    {xp:300,icon:'💎',name:'Inversión con criterio',desc:'Inversión mayor con tesis clara y documentada'},
+  ]},
+  conocimiento:{label:'📚 Conocimiento',tiers:[
+    {xp:50,icon:'📖',name:'Compra un libro',desc:'Cualquier libro de tu lista activa'},
+    {xp:150,icon:'💻',name:'Curso online',desc:'Curso pagado en Udemy, Coursera o similar'},
+    {xp:300,icon:'🎤',name:'Ponencia o evento',desc:'Entrada a conferencia o evento formativo'},
+  ]},
+  hobby:{label:'🎨 Hobby',tiers:[
+    {xp:50,icon:'🎯',name:'Clase suelta',desc:'Prueba una clase de lo que más te llamó la atención'},
+    {xp:150,icon:'🗓️',name:'Membresía un mes',desc:'Un mes en el hobby que elegiste'},
+    {xp:300,icon:'🛠️',name:'Inversión seria',desc:'Equipo o suscripción anual en tu hobby'},
+  ]},
+  finanzas:{label:'💵 Finanzas Pers.',tiers:[
+    {xp:50,icon:'🍽️',name:'Cena especial',desc:'Una experiencia gastronómica que postergaste'},
+    {xp:150,icon:'🌊',name:'Escapada fin de semana',desc:'Viaje corto fuera de Lima'},
+    {xp:300,icon:'✈️',name:'Viaje internacional',desc:'Un destino internacional que quieras conocer'},
+  ]},
+  energia:{label:'⚡ Energía',tiers:[
+    {xp:50,icon:'🏋️',name:'Un mes de gym',desc:'Membresía mensual en el gym o deporte'},
+    {xp:150,icon:'🧘',name:'Retiro o taller',desc:'Experiencia de bienestar: retiro, taller, spa'},
+    {xp:300,icon:'🏅',name:'Coach o programa',desc:'Coach personal o programa serio de salud'},
+  ]},
+  mentalidad:{label:'🎯 Mentalidad',tiers:[
+    {xp:50,icon:'📓',name:'Diario de reflexión',desc:'Una libreta buena solo para tu desarrollo'},
+    {xp:150,icon:'🧠',name:'Taller de liderazgo',desc:'Taller de mindset, liderazgo o resiliencia'},
+    {xp:300,icon:'🎓',name:'Coaching ejecutivo',desc:'Sesiones con coach ejecutivo certificado'},
+  ]},
+  red:{label:'🌐 Red',tiers:[
+    {xp:50,icon:'🤝',name:'Evento de networking',desc:'Asiste a un evento de tu nivel o mayor'},
+    {xp:150,icon:'🎟️',name:'Participa en un panel',desc:'Patrocina, participa o presenta en un evento'},
+    {xp:300,icon:'🌍',name:'Evento internacional',desc:'Conferencia o evento fuera del Perú'},
+  ]},
+  presencia:{label:'🎤 Presencia',tiers:[
+    {xp:50,icon:'📸',name:'Foto profesional',desc:'Sesión de fotos profesional para tu perfil'},
+    {xp:150,icon:'✍️',name:'Publica tu voz',desc:'Escribe y publica un artículo en LinkedIn'},
+    {xp:300,icon:'🎙️',name:'Tu primera charla',desc:'Da una charla o participa en un panel'},
+  ]},
+  lider:{label:'🎙️ Líder',tiers:[
+    {xp:50,icon:'📚',name:'Libro de liderazgo',desc:'Compra Never Split the Difference o Las 21 Leyes'},
+    {xp:150,icon:'🎓',name:'Curso de negociación',desc:'Curso de negociación o comunicación ejecutiva'},
+    {xp:300,icon:'🏛️',name:'Programa de gobierno',desc:'Programa de gobierno corporativo avanzado'},
+  ]},
+  estratega:{label:'🧠 Estratega',tiers:[
+    {xp:50,icon:'🗺️',name:'Plan documentado',desc:'Herramienta para documentar tu estrategia'},
+    {xp:150,icon:'📊',name:'Curso de estrategia',desc:'Curso de estrategia empresarial o financiero'},
+    {xp:300,icon:'🤝',name:'Consultoría externa',desc:'Sesión con consultor o mentor estratégico'},
+  ]},
+  constructor:{label:'🏗️ Constructor',tiers:[
+    {xp:50,icon:'📋',name:'Registra tu empresa',desc:'Avanza en formalizar Gestiona+ como tuya'},
+    {xp:150,icon:'⚖️',name:'Asesoría legal',desc:'Sesión legal para estructura empresarial'},
+    {xp:300,icon:'🚀',name:'Lanza algo nuevo',desc:'Nueva línea de servicio o primer cliente externo'},
+  ]},
+};
+
+const MISSIONS = [
+  {id:1,wave:1,group:'empresario',icon:'📖',title:'Activa tu mente',
+   desc:'Lee los primeros 2 capítulos de <em>Potencial Oculto</em> (Adam Grant). Vuelve con una sola oración: ¿qué cambiarías de cómo aprendes cosas nuevas?',
+   skills:{conocimiento:30},tags:['skill-conocimiento','tipo-accion:Lectura'],log:'Activa tu mente — Potencial Oculto cap. 1-2'},
+  {id:2,wave:1,group:'empresario',icon:'🤝',title:'Primer contacto',
+   desc:'Agenda una conversación informal con tu abogado de confianza. Sin agenda formal — solo observa si tiene visión de crecimiento o solo quiere facturar.',
+   skills:{constructor:30,lider:20},tags:['skill-constructor','skill-lider','tipo-accion:Acción real'],log:'Primer contacto — conversación con abogado'},
+  {id:3,wave:1,group:'inversor',icon:'💻',title:'Entra al juego',
+   desc:'Abre una cuenta en Interactive Brokers (o Renta4). No deposites aún. Explora 30 minutos y anota 3 cosas que no entiendes.',
+   skills:{inversor:40},tags:['skill-inversor','tipo-accion:Acción real'],log:'Entra al juego — cuenta en bróker abierta'},
+  {id:4,wave:1,group:'empresario',icon:'📋',title:'Diario del directorio',
+   desc:'Después de tu próxima reunión de directorio, escribe 3 líneas: ¿qué hiciste bien? ¿Cuándo pudiste conducir mejor la sala? ¿Qué harías diferente?',
+   skills:{lider:20,estratega:15},tags:['skill-lider','skill-estratega','tipo-accion:Reflexión'],log:'Diario del directorio — primera entrada'},
+  {id:5,wave:1,group:'persona',icon:'🎧',title:'Universidad en el tráfico',
+   desc:'En tus 40 minutos de ida al trabajo, pon un audiolibro o podcast de negocios. Hazlo 3 días seguidos. Ya vas avanzando con Psychology of Money.',
+   skills:{conocimiento:20,energia:10},tags:['skill-conocimiento','skill-energia','tipo-accion:Hábito'],log:'Universidad en el tráfico — 3 días completados'},
+  {id:6,wave:1,group:'persona',icon:'💵',title:'Radiografía financiera personal',
+   desc:'En 30 minutos, anota: cuánto ganas al mes, cuánto gastas y cuánto queda. Ya sabes que en comida van ~S/4k mensuales entre tú y Luz. Completa el cuadro.',
+   skills:{finanzas:40},tags:['skill-finanzas','tipo-accion:Reflexión'],log:'Radiografía financiera personal — primera versión'},
+  {id:7,wave:1,group:'persona',icon:'🌐',title:'Activa tu LinkedIn',
+   desc:'Revisa tu perfil. ¿Foto actualizada? ¿Refleja al Koji de hoy — Gerente de Administración y Finanzas, Presidente de Directorio provisional? Si no, corrígelo.',
+   skills:{presencia:30,red:20},tags:['skill-presencia','skill-red','tipo-accion:Acción real'],log:'LinkedIn activado y actualizado'},
+  {id:8,wave:1,group:'persona',icon:'🎨',title:'Explora un hobby nuevo',
+   desc:'Busca en YouTube un video de algo que nunca hayas probado: pintura, fotografía, cerámica, ajedrez, billar. 20 minutos. Solo observa qué te engancha.',
+   skills:{hobby:30,mentalidad:10},tags:['skill-hobby','skill-mentalidad','tipo-accion:Exploración'],log:'Exploración de hobby — primer video visto'},
+  {id:9,wave:1,group:'persona',icon:'🏃',title:'Mueve el cuerpo',
+   desc:'Sal a caminar con Bonnie 3 veces esta semana, mínimo 20 minutos. Ya llevas 2 días. Un día más y cierras esta misión.',
+   skills:{energia:35},tags:['skill-energia','tipo-accion:Hábito'],log:'Mueve el cuerpo — 3 caminatas con Bonnie'},
+  {id:10,wave:1,group:'empresario',icon:'🧠',title:'Un contacto que vale',
+   desc:'Tienes identificados a Camila, Angie, Leandro y Altemi. Elige uno y dile explícitamente lo que ves en ellos — algo específico, no un elogio genérico.',
+   skills:{red:40,mentalidad:15},tags:['skill-red','skill-mentalidad','tipo-accion:Acción real'],log:'Un contacto que vale — conversación de potencial'},
+  // WAVE 2
+  {id:11,wave:2,group:'inversor',icon:'🔍',title:'Auditoría de gastos',
+   desc:'Revisa tus últimos 3 meses de estados de cuenta. Detecta 3 gastos recurrentes que puedas eliminar o reducir.',
+   skills:{finanzas:45,estratega:15},tags:['skill-finanzas','skill-estratega','tipo-accion:Análisis'],log:'Auditoría de gastos — 3 fugas identificadas'},
+  {id:12,wave:2,group:'inversor',icon:'🌱',title:'Semilla de Oro',
+   desc:'El próximo día que cobres, separa un monto fijo en una cuenta distinta. Ese dinero es solo para inversión. No se toca.',
+   skills:{inversor:35,finanzas:25},tags:['skill-inversor','skill-finanzas','tipo-accion:Acción real'],log:'Semilla de Oro — primer monto separado'},
+  {id:13,wave:2,group:'inversor',icon:'📊',title:'El Analista',
+   desc:'Investiga cómo funciona un instrumento financiero que no uses aún — ETF, fondo indexado o acción. Luego explícamelo con tus propias palabras.',
+   skills:{inversor:40,conocimiento:25},tags:['skill-inversor','skill-conocimiento','tipo-accion:Aprendizaje'],log:'El Analista — instrumento financiero explicado'},
+  {id:14,wave:2,group:'empresario',icon:'👂',title:'Escucha Activa',
+   desc:'En tu próxima reunión de directorio: 80% escuchando, 20% hablando. Haz al menos 2 preguntas profundas antes de dar tu posición.',
+   skills:{lider:35,estratega:20},tags:['skill-lider','skill-estratega','tipo-accion:Práctica'],log:'Escucha Activa — reunión de directorio'},
+  {id:15,wave:2,group:'empresario',icon:'🏛️',title:'El Mentor',
+   desc:'Elige una habilidad tuya concreta y ofrécele a uno de tus chicos una sesión de trabajo real donde le enseñes eso. Ya lo hiciste con Altemi — formalízalo.',
+   skills:{lider:30,conocimiento:20,red:15},tags:['skill-lider','skill-conocimiento','tipo-accion:Acción real'],log:'El Mentor — sesión de enseñanza con equipo'},
+  {id:16,wave:2,group:'persona',icon:'☕',title:'Café solo sin celular',
+   desc:'Ve a un café solo, 45 minutos sin celular. Solo tu libreta. Escribe lo que sea: lo que piensas, lo que sientes, lo que quieres. Tiempo para el Koji que está aprendiéndose.',
+   skills:{mentalidad:35,hobby:20},tags:['skill-mentalidad','skill-hobby','tipo-accion:Desconexión'],log:'Café solo sin celular — 45 minutos contigo mismo'},
+  {id:17,wave:2,group:'persona',icon:'🍜',title:'Explorador de Lima',
+   desc:'Ve a un mercado, barrio o restaurante de Lima que nunca hayas visitado. Con Luz o solo. Sin Google Maps para navegar — déjate perder un poco.',
+   skills:{hobby:30,energia:20,mentalidad:15},tags:['skill-hobby','skill-energia','tipo-accion:Exploración'],log:'Explorador de Lima — lugar nuevo descubierto'},
+  {id:18,wave:2,group:'persona',icon:'🌅',title:'Mañana para ti',
+   desc:'Un día esta semana, levántate 30 minutos antes. Sin celular los primeros 15 minutos. Camina, lee, toma café en silencio. Solo 30 minutos completamente tuyos.',
+   skills:{energia:25,mentalidad:30},tags:['skill-energia','skill-mentalidad','tipo-accion:Hábito'],log:'Mañana para ti — 30 minutos propios'},
+];
+
+const LEVEL_THRESHOLDS=[0,200,500,1000,1800,3000,5000];
+const LEVEL_TITLES=['','Emprendedor','Estratega Junior','Constructor','Inversor Activo','Empresario','Visionario'];
+
+function defaultState(){
+  const skills={};
+  SKILLS_CONFIG.forEach(s=>skills[s.id]=0);
+  return {totalXP:0,missions:{},skills,log:[],missionsCompleted:0};
+}
+
+let state=defaultState();
+let currentFilter='todas';
+
+// CLOUD STORAGE via artifact persistent storage
+async function loadFromCloud(){
+  setSyncStatus('syncing','Cargando...');
+  try {
+    const result = await window.storage.get(STORAGE_KEY);
+    if(result && result.value){
+      const parsed = JSON.parse(result.value);
+      const def = defaultState();
+      state = {...def,...parsed,skills:{...def.skills,...(parsed.skills||{})}};
+    }
+    setSyncStatus('ok','Sincronizado');
+  } catch(e){
+    setSyncStatus('ok','Progreso local');
+  }
+  document.getElementById('loading-screen').classList.add('hidden');
+  render();
+}
+
+async function saveToCloud(){
+  setSyncStatus('syncing','Guardando...');
+  try {
+    await window.storage.set(STORAGE_KEY, JSON.stringify(state));
+    setSyncStatus('ok','Guardado');
+  } catch(e){
+    setSyncStatus('error','Error al guardar');
+  }
+}
+
+function setSyncStatus(status, label){
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (status==='syncing'?' syncing':status==='error'?' error':'');
+  lbl.textContent = label;
+}
+
+function getLevel(xp){let l=1;for(let i=1;i<LEVEL_THRESHOLDS.length;i++){if(xp>=LEVEL_THRESHOLDS[i])l=i+1;else break;}return Math.min(l,LEVEL_THRESHOLDS.length);}
+function getXPInLevel(xp){const l=getLevel(xp);return xp-(LEVEL_THRESHOLDS[l-1]||0);}
+function getXPForNextLevel(xp){const l=getLevel(xp);const n=LEVEL_THRESHOLDS[l];if(!n)return null;return n-(LEVEL_THRESHOLDS[l-1]||0);}
+function wave1Complete(){return MISSIONS.filter(m=>m.wave===1).every(m=>state.missions[m.id]);}
+
+function renderSkills(){
+  const grid=document.getElementById('skills-grid');
+  grid.innerHTML=SKILLS_CONFIG.map((s,i)=>{
+    const val=state.skills[s.id]||0;
+    const pct=Math.min(100,(val/300)*100);
+    const rd=SKILL_REWARDS[s.id];
+    let next=null;
+    if(rd)for(const t of rd.tiers){if(val<t.xp){next=t;break;}}
+    const span=(i===SKILLS_CONFIG.length-1&&SKILLS_CONFIG.length%2!==0)?' style="grid-column:span 2"':'';
+    return `<div class="skill-card ${s.cls}"${span}>
+      <div class="skill-name">${s.label}</div>
+      <div class="skill-xp">${val} XP</div>
+      <div class="skill-bar"><div class="skill-bar-fill" style="width:${pct}%"></div></div>
+      <div class="skill-next">${next?`→ ${next.xp} XP: ${next.icon} ${next.name}`:'✦ Todos desbloqueados'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderRewards(){
+  const c=document.getElementById('rewards-container');
+  c.innerHTML=Object.entries(SKILL_REWARDS).map(([sid,def])=>{
+    const xp=state.skills[sid]||0;
+    return `<div class="skill-reward-group">
+      <div class="skill-reward-header">
+        <span class="skill-reward-title">${def.label}</span>
+        <span class="skill-reward-xp">${xp} XP</span>
+      </div>
+      <div class="reward-tiers">${def.tiers.map(t=>{
+        const u=xp>=t.xp;
+        return `<div class="reward-tier${u?' unlocked':''}">
+          <div class="reward-lock">${u?'🔓':'🔒'}</div>
+          <div class="reward-tier-info">
+            <div class="reward-tier-name">${t.icon} ${t.name}</div>
+            <div class="reward-tier-desc">${t.desc}</div>
+          </div>
+          <div class="reward-tier-pts">${xp}/${t.xp}</div>
+        </div>`;
+      }).join('')}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderMissions(){
+  const c=document.getElementById('missions-container');
+  const w1done=wave1Complete();
+  const notice=document.getElementById('unlock-notice');
+  if(w1done){notice.textContent='🏆 ¡Semana 1 completada! Semana 2 desbloqueada.';notice.classList.add('show');}
+
+  let missions=MISSIONS;
+  if(currentFilter!=='todas')missions=missions.filter(m=>m.group===currentFilter);
+  const w1=missions.filter(m=>m.wave===1);
+  const w2=missions.filter(m=>m.wave===2);
+  let html='';
+  if(w1.length){html+=`<div class="wave-label w1">// Semana 1</div>`;html+=w1.map(m=>mCard(m,false)).join('');}
+  if(w2.length){html+=`<div class="wave-label ${w1done?'w2':'w2-locked'}" style="margin-top:16px">${w1done?'// Semana 2 — Activa':'🔒 Semana 2 — Completa Semana 1 primero'}</div>`;html+=w2.map(m=>mCard(m,!w1done)).join('');}
+  c.innerHTML=html;
+}
+
+function mCard(m,locked){
+  const done=state.missions[m.id];
+  const xp=Object.values(m.skills).reduce((a,b)=>a+b,0);
+  const tags=m.tags.map(t=>t.startsWith('tipo-accion:')?`<span class="tag tipo-accion">${t.split(':')[1]}</span>`:`<span class="tag ${t}">${t.replace('skill-','')}</span>`).join('');
+  return `<div class="mission-card${done?' completed':''}${locked?' locked-card':''}">
+    <div class="mission-header"><span class="mission-icon">${m.icon}</span><span class="mission-title">${m.title}</span></div>
+    <div class="mission-desc">${m.desc}</div>
+    <div class="mission-footer">${tags}<span class="tag pts">+${xp} XP</span></div>
+    ${(!done&&!locked)?`<button class="complete-btn" onclick="completeMission(${m.id})">Marcar completada</button>`:''}
+  </div>`;
+}
+
+function filterMissions(btn,group){
+  currentFilter=group;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  renderMissions();
+}
+
+function completeMission(id){
+  const m=MISSIONS.find(x=>x.id===id);
+  if(!m||state.missions[id])return;
+  const prev={...state.skills};
+  state.missions[id]=true;
+  state.missionsCompleted++;
+  let gained=0;
+  for(const[sk,pts]of Object.entries(m.skills)){state.skills[sk]=(state.skills[sk]||0)+pts;state.totalXP+=pts;gained+=pts;}
+  const unlocks=[];
+  Object.entries(SKILL_REWARDS).forEach(([sid,def])=>{
+    const p=prev[sid]||0,n=state.skills[sid]||0;
+    def.tiers.forEach(t=>{if(p<t.xp&&n>=t.xp)unlocks.push(`${t.icon} ${t.name}`);});
+  });
+  const now=new Date();
+  state.log.push({date:now.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit'}),text:m.log,pts:gained});
+  saveToCloud();
+  render();
+  if(wave1Complete()&&Object.keys(state.missions).length===MISSIONS.filter(m=>m.wave===1).length){showToast(`+${gained} XP ⚡ ¡Semana 2 desbloqueada!`);}
+  else if(unlocks.length){showToast(`+${gained} XP ⚡ Recompensa: ${unlocks[0]}`);}
+  else{showToast(`+${gained} XP ⚡ ¡Misión completada!`);}
+}
+
+function renderLog(){
+  const c=document.getElementById('log-container');
+  if(!state.log.length){c.innerHTML='<div class="empty-log">— Sin actividad aún. —</div>';return;}
+  c.innerHTML=[...state.log].reverse().map(e=>`<div class="log-entry"><div class="log-date">${e.date}</div><div class="log-text">${e.text}</div><div class="log-pts">+${e.pts} XP</div></div>`).join('');
+}
+
+function render(){
+  const xp=state.totalXP,level=getLevel(xp),xpIn=getXPInLevel(xp),xpNext=getXPForNextLevel(xp);
+  document.getElementById('level-display').textContent=level;
+  document.getElementById('level-title').textContent=LEVEL_TITLES[level]||'Visionario';
+  document.getElementById('total-xp-display').textContent=xp;
+  document.getElementById('current-level-label').textContent=level;
+  document.getElementById('xp-in-level').textContent=xpIn;
+  document.getElementById('missions-count').textContent=state.missionsCompleted;
+  if(xpNext){document.getElementById('xp-for-next').textContent=xpNext;document.getElementById('level-bar').style.width=Math.min(100,(xpIn/xpNext)*100)+'%';}
+  else{document.getElementById('xp-for-next').textContent='MAX';document.getElementById('level-bar').style.width='100%';}
+  renderSkills();renderRewards();renderMissions();renderLog();
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+// Init
+loadFromCloud();
+</script>
+</body>
+</html>
