@@ -1,8 +1,12 @@
 -- =============================================================================
--- MISSIO — Schema Fase 1
+-- MISSIO — Schema Fase 1 (v2)
 -- Separación plantilla / personalización + arcos dinámicos + reflexión + expert inputs
 -- PostgreSQL / Supabase. Todo referenciado a auth.users.
 -- Última actualización de diseño: 2026-07-08
+-- v2: la tabla de instancias de misión se llama user_missions (evita choque de
+-- nombre con la tabla `missions` ya existente en producción); el consentimiento
+-- de aprendizaje colectivo vive en user_settings en vez de alterar `usuarios`
+-- (esa tabla no existe en el esquema actual de producción).
 -- =============================================================================
 -- Principio rector: Missio mide identidad en construcción, no tareas completadas.
 -- El schema separa (1) la plantilla genérica reutilizable, (2) las variables
@@ -153,7 +157,9 @@ create index on public.user_arcs (user_id, status);
 
 -- Instancia de misión ya generada y CONGELADA para un usuario.
 -- El texto ya tiene las variables resueltas; no se recalcula si cambian luego.
-create table public.missions (
+-- Nombrada user_missions (no `missions`) para no chocar con la tabla `missions`
+-- ya existente en producción, que sirve al esquema actual hardcodeado.
+create table public.user_missions (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references auth.users(id) on delete cascade,
   -- template_id null cuando la misión fue generada 100% dinámicamente por la API.
@@ -179,8 +185,8 @@ create table public.missions (
   completed_at   timestamptz
 );
 
-create index on public.missions (user_id, status);
-create index on public.missions (user_arc_id, arc_step);
+create index on public.user_missions (user_id, status);
+create index on public.user_missions (user_arc_id, arc_step);
 
 
 -- =============================================================================
@@ -191,7 +197,7 @@ create index on public.missions (user_arc_id, arc_step);
 create table public.reflections (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null references auth.users(id) on delete cascade,
-  mission_id    uuid not null references public.missions(id) on delete cascade,
+  mission_id    uuid not null references public.user_missions(id) on delete cascade,
   user_arc_id   uuid references public.user_arcs(id) on delete set null,
   resultado_tipo reflection_result not null,     -- avanza | pivota | descarta
   sentimiento    smallint check (sentimiento between 1 and 5),
@@ -242,9 +248,18 @@ create table public.template_outcomes (
   constraint outcome_target check (template_id is not null or arc_template_id is not null)
 );
 
--- Consentimiento explícito para usar datos anonimizados (onboarding).
-alter table public.usuarios
-  add column if not exists collective_learning_consent boolean not null default false;
+-- Configuración/consentimiento por usuario. Reemplaza el `alter table usuarios`
+-- de la v1: `usuarios` no existe en el esquema actual de producción, así que
+-- el consentimiento de aprendizaje colectivo vive en su propia tabla.
+create table public.user_settings (
+  id            uuid primary key default gen_random_uuid(),
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  collective_learning_consent boolean not null default false,
+  updated_at     timestamptz not null default now(),
+  unique (user_id)
+);
+
+create index on public.user_settings (user_id);
 
 
 -- =============================================================================
@@ -272,9 +287,10 @@ create policy "template_outcomes_read" on public.template_outcomes
 -- Datos de usuario (dueño = auth.uid()) ---------------------------------------
 alter table public.user_variables enable row level security;
 alter table public.user_arcs      enable row level security;
-alter table public.missions       enable row level security;
+alter table public.user_missions  enable row level security;
 alter table public.reflections    enable row level security;
 alter table public.expert_inputs  enable row level security;
+alter table public.user_settings  enable row level security;
 
 -- Helper: una policy por tabla que cubre todas las operaciones.
 create policy "own_user_variables" on public.user_variables
@@ -285,7 +301,7 @@ create policy "own_user_arcs" on public.user_arcs
   for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
-create policy "own_missions" on public.missions
+create policy "own_user_missions" on public.user_missions
   for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
@@ -294,6 +310,10 @@ create policy "own_reflections" on public.reflections
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create policy "own_expert_inputs" on public.expert_inputs
+  for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "own_user_settings" on public.user_settings
   for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
@@ -317,8 +337,8 @@ create policy "own_expert_inputs" on public.expert_inputs
 --     hasta reinterpretar o descartar.
 --
 --  c) `estado_rpg` (XP, nivel, skills, log) permanece como está; se puede
---     recomputar XP desde reflections/missions una vez migrado, o mantener el
---     valor histórico como snapshot inicial.
+--     recomputar XP desde reflections/user_missions una vez migrado, o mantener
+--     el valor histórico como snapshot inicial.
 --
 --  d) Renombrado de identidad de negocio: el contenido personalizado a Koji
 --     (cargo) debe reflejar el rol vigente al momento de generar cada instancia,
