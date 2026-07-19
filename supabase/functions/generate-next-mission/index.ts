@@ -122,8 +122,9 @@ Deno.serve(async (req) => {
       .eq("user_arc_id", user_arc_id);
 
     // 2e. Misiones previas del arco, para no repetir y dar continuidad.
+    // NOTA: tabla user_missions (paralela a la `missions` de producción).
     const { data: pastMissions } = await supabase
-      .from("missions")
+      .from("user_missions")
       .select("title, description, status, arc_step, created_at")
       .eq("user_arc_id", user_arc_id)
       .order("created_at", { ascending: false })
@@ -191,7 +192,7 @@ Deno.serve(async (req) => {
     );
 
     const { data: inserted, error: insErr } = await supabase
-      .from("missions")
+      .from("user_missions")
       .insert({
         user_id: userId,
         template_id: null, // generada 100% dinámicamente
